@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NurseIQ - Healthcare AI Agent</title>
+  <link rel="stylesheet" href="styles.css">
+  
+  <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+</head>
+<body>
+  <header>
+    <h1>NurseIQ</h1>
+    <p>AI-Powered Clinical Assistant</p>
+  </header>
+  <main>
+    <div class="container">
+      <div class="chat-container">
+        <div id="chat-messages" class="chat-messages">
+          <div class="message bot-message">
+            <div class="message-content">Hello! I'm NurseIQ, your clinical documentation assistant. Click the microphone to dictate a patient handover note.</div>
+          </div>
+        </div>
+        
+        <div class="chat-input">
+          <input type="text" id="user-input" placeholder="Type or speak patient handover note..." />
+          
+          <button id="startRecBtn" style="cursor: pointer; margin-left: 5px;" title="Start Recording">🎤</button>
+          <button id="stopRecBtn" style="display:none; cursor: pointer; margin-left: 5px; color: red;" title="Stop Recording">⏹️</button>
+          
+          <button id="send-button" style="margin-left: 5px;">Send</button>
+        </div>
+        
+        <div id="recordingIndicator" style="display:none; color:red; font-weight:bold; text-align: center; margin-top: 10px; font-size: 0.9em;">
+          🔴 Recording... Please speak clearly.
+        </div>
+        
+      </div>
+    </div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

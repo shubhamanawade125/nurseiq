@@ -1,0 +1,30 @@
+{
+  "name": "nurseiq",
+  "version": "1.0.0",
+  "description": "Healthcare AI agent system for Microsoft hackathon",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js"
+  },
+  "dependencies": {
+    "@azure/identity": "^3.0.0",
+    "@azure/keyvault-secrets": "^4.0.0",
+    "axios": "^1.13.5",
+    "dotenv": "^17.3.1",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "keywords": [
+    "healthcare",
+    "ai",
+    "azure",
+    "openai"
+  ],
+  "author": "",
+  "license": "ISC"
+}
