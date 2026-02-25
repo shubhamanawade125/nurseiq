@@ -1,0 +1,53 @@
+{
+  "mcpVersion": "1.0",
+  "name": "nurseiq-mcp-server",
+  "description": "NurseIQ Multi-Agent Clinical AI System - MCP Tool Registry",
+  "tools": [
+    {
+      "name": "generate_soap_note",
+      "description": "Converts nursing handover notes into structured SOAP format using Azure OpenAI",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "handoverNote": { "type": "string", "description": "Raw nursing handover note text" }
+        },
+        "required": ["handoverNote"]
+      }
+    },
+    {
+      "name": "check_medication_safety",
+      "description": "Checks medications against OpenFDA database for safety alerts",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "handoverNote": { "type": "string", "description": "Note text containing medication names" }
+        },
+        "required": ["handoverNote"]
+      }
+    },
+    {
+      "name": "generate_discharge_summary",
+      "description": "Generates patient-friendly discharge instructions from clinical notes",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "handoverNote": { "type": "string" },
+          "soapNote": { "type": "object" }
+        },
+        "required": ["handoverNote"]
+      }
+    },
+    {
+      "name": "audit_note_processing",
+      "description": "Logs all agent actions for compliance and PHI detection",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "handoverNote": { "type": "string" },
+          "activatedAgents": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["handoverNote", "activatedAgents"]
+      }
+    }
+  ]
+}
