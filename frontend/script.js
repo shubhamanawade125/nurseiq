@@ -4,205 +4,250 @@ const userInput = document.getElementById('user-input');
 const chatMessages = document.getElementById('chat-messages');
 
 function addMessage(text, isBot = false) {
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${isBot ? 'bot-message' : 'user-message'}`;
-    msgDiv.innerHTML = `<div class="message-content">${text}</div>`;
-    chatMessages.appendChild(msgDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    return msgDiv;
+  const msgDiv = document.createElement('div');
+  msgDiv.classList.add('message');
+  msgDiv.classList.add(isBot ? 'bot-message' : 'user-message');
+  msgDiv.innerHTML = text;
+  chatMessages.appendChild(msgDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function formatMedicationAlerts(medSafety) {
-    if (!medSafety) return '';
-
-    const severity = medSafety.severity_level || 'Low';
-    const severityColor = severity === 'High' || severity === 'Critical' ? '#A4262C' : '#107C10';
-    const severityIcon = severity === 'High' || severity === 'Critical' ? '🔴' : '🟢';
-
-    let html = `<hr style="margin: 12px 0; border-color: #ccc;">`;
-    html += `<b>💊 Medication Safety Check</b><br><br>`;
-
-    if (medSafety.medications_detected && medSafety.medications_detected.length > 0) {
-        html += `<b>Detected:</b> ${medSafety.medications_detected.join(', ')}<br><br>`;
-    } else {
-        html += `<b>Detected:</b> No known medications flagged<br><br>`;
-    }
-
-    if (medSafety.alerts && medSafety.alerts.length > 0) {
-        medSafety.alerts.forEach(alert => {
-            const alertColor = alert.severity === 'High' ? '#A4262C' : '#107C10';
-            const alertIcon = alert.severity === 'High' ? '⚠️' : '✅';
-            html += `<div style="border-left: 4px solid ${alertColor}; padding: 6px 10px; margin-bottom: 8px; background: #f9f9f9; border-radius: 4px;">`;
-            html += `${alertIcon} <b>${alert.medication.toUpperCase()}</b> — Severity: <span style="color:${alertColor}"><b>${alert.severity}</b></span><br>`;
-            html += `<span style="font-size: 0.9em;">${alert.warning ? alert.warning.substring(0, 200) + '...' : 'No specific FDA warnings found.'}</span>`;
-            html += `</div>`;
-        });
-    } else {
-        html += `✅ <span style="color: #107C10;">No drug interaction alerts found.</span><br>`;
-    }
-
-    html += `<br><b>Overall Severity:</b> <span style="color: ${severityColor}; font-weight: bold;">${severityIcon} ${severity}</span>`;
-    return html;
-}
-
-function formatPatientComms(comms) {
-    if (!comms || !comms.success) return '';
-
-    let html = `<hr style="margin: 12px 0; border-color: #ccc;">`;
-    html += `<b>📋 Patient Discharge Summary</b><br><br>`;
-
-    if (comms.patientInstructions) {
-        html += `<div style="border-left: 4px solid #0078D4; padding: 6px 10px; margin-bottom: 8px; background: #f0f7ff; border-radius: 4px;">`;
-        html += `<b>📝 Instructions:</b><br>${comms.patientInstructions}`;
-        html += `</div>`;
-    }
-
-    if (comms.medications) {
-        html += `<div style="border-left: 4px solid #107C10; padding: 6px 10px; margin-bottom: 8px; background: #f0fff0; border-radius: 4px;">`;
-        html += `<b>💊 Medications:</b><br>${comms.medications}`;
-        html += `</div>`;
-    }
-
-    if (comms.warningSigns) {
-        html += `<div style="border-left: 4px solid #A4262C; padding: 6px 10px; margin-bottom: 8px; background: #fff0f0; border-radius: 4px;">`;
-        html += `<b>⚠️ Warning Signs — Return to Hospital if:</b><br>${comms.warningSigns}`;
-        html += `</div>`;
-    }
-
-    if (comms.followUp) {
-        html += `<div style="border-left: 4px solid #8764B8; padding: 6px 10px; margin-bottom: 8px; background: #f8f0ff; border-radius: 4px;">`;
-        html += `<b>📅 Follow-up:</b><br>${comms.followUp}`;
-        html += `</div>`;
-    }
-
-    if (comms.dietActivity) {
-        html += `<div style="border-left: 4px solid #FF8C00; padding: 6px 10px; margin-bottom: 8px; background: #fff8f0; border-radius: 4px;">`;
-        html += `<b>🥗 Diet & Activity:</b><br>${comms.dietActivity}`;
-        html += `</div>`;
-    }
-
-    return html;
-}
-
-sendBtn.addEventListener('click', async () => {
-    const noteText = userInput.value.trim();
-    if (!noteText) return;
-
-    addMessage(noteText, false);
-    userInput.value = '';
-
-    const thinkingMsg = addMessage(`
-        <i>🧠 Orchestrator analysing note...</i><br>
-        <small style="color:#0078D4;">▶ Documentation Agent activating...</small>
-    `, true);
-
-    try {
-        const response = await fetch('/api/process-note', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ patientNote: noteText })
-        });
-
-        if (!response.ok) throw new Error('Server returned an error');
-        const data = await response.json();
-
-        // --- SOAP Note ---
-        let formattedHtml = `<b>✅ Clinical Documentation Processed</b><br>`;
-        formattedHtml += `<div style="background:#fff3cd; color:#856404; padding:6px 10px; border-radius:4px; margin: 8px 0; font-size:0.85em;">
-            ⚠️ <b>AI-ASSISTED DRAFT:</b> This note was generated by NurseIQ AI and must be reviewed and verified by a qualified nurse before use.
-        </div>`;
-
-        const soap = data.soapNote || data;
-
-        if (soap.patientName) formattedHtml += `<b>Patient:</b> ${soap.patientName}<br><br>`;
-        if (soap.subjective) formattedHtml += `<b>S (Subjective):</b><br>${soap.subjective}<br><br>`;
-        if (soap.objective)  formattedHtml += `<b>O (Objective):</b><br>${soap.objective}<br><br>`;
-        if (soap.assessment) formattedHtml += `<b>A (Assessment):</b><br>${soap.assessment}<br><br>`;
-        if (soap.plan)       formattedHtml += `<b>P (Plan):</b><br>${soap.plan}`;
-
-        // --- Medication Safety Alerts ---
-        const medSafety = data.medicationSafety || data.medications || null;
-        formattedHtml += formatMedicationAlerts(medSafety);
-
-        // --- Patient Communications (if present) ---
-        const comms = data.patientCommunication || data.communication || null;
-        formattedHtml += formatPatientComms(comms);
-
-        if (!soap.subjective && !soap.objective && !soap.assessment && !soap.plan) {
-            formattedHtml += `<pre style="white-space: pre-wrap; font-family: inherit; font-size:0.85em;">${JSON.stringify(data, null, 2)}</pre>`;
-        }
-
-        thinkingMsg.innerHTML = `<div class="message-content">${formattedHtml}</div>`;
-
-    } catch (error) {
-        console.error('Fetch error:', error);
-        thinkingMsg.innerHTML = `<div class="message-content" style="color: red;">❌ Error connecting to NurseIQ AI. Check terminal for details.<br><small>${error.message}</small></div>`;
-    }
-});
-
-// --- AZURE SPEECH-TO-TEXT ---
+// --- VOICE RECOGNITION ---
+let recognition = null;
 const startRecBtn = document.getElementById('startRecBtn');
-const stopRecBtn  = document.getElementById('stopRecBtn');
+const stopRecBtn = document.getElementById('stopRecBtn');
 const recordingIndicator = document.getElementById('recordingIndicator');
 
-let recognizer;
+async function initSpeech() {
+  try {
+    const response = await fetch('/api/speech-config');
+    const config = await response.json();
 
-if (startRecBtn && stopRecBtn && recordingIndicator) {
-    startRecBtn.addEventListener('click', async () => {
-        try {
-            const response = await fetch('/api/speech-config');
-            const configData = await response.json();
+    if (!config.key || config.key === 'undefined') {
+      console.warn('Azure Speech key not configured');
+      return;
+    }
 
-            if (!configData.key) {
-                alert("Azure Speech key not configured in .env file.\nAdd: AZURE_SPEECH_KEY=your_key\nAZURE_SPEECH_REGION=eastus");
-                return;
-            }
+    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(config.key, config.region);
+    speechConfig.speechRecognitionLanguage = 'en-US';
+    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+    recognition = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
 
-            const speechConfig = window.SpeechSDK.SpeechConfig.fromSubscription(configData.key, configData.region);
-            speechConfig.speechRecognitionLanguage = "en-US";
-            const audioConfig = window.SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+    recognition.recognized = (s, e) => {
+      if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+        userInput.value += e.result.text + ' ';
+      }
+    };
 
-            recognizer = new window.SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+    startRecBtn.onclick = () => {
+      recognition.startContinuousRecognitionAsync();
+      startRecBtn.style.display = 'none';
+      stopRecBtn.style.display = 'inline-block';
+      if (recordingIndicator) recordingIndicator.style.display = 'block';
+    };
 
-            startRecBtn.style.display = 'none';
-            stopRecBtn.style.display = 'inline-block';
-            recordingIndicator.style.display = 'block';
+    stopRecBtn.onclick = () => {
+      recognition.stopContinuousRecognitionAsync();
+      stopRecBtn.style.display = 'none';
+      startRecBtn.style.display = 'inline-block';
+      if (recordingIndicator) recordingIndicator.style.display = 'none';
+    };
 
-            recognizer.recognized = (s, e) => {
-                if (e.result.reason === window.SpeechSDK.ResultReason.RecognizedSpeech) {
-                    userInput.value += (userInput.value ? " " : "") + e.result.text;
-                }
-            };
-
-            recognizer.startContinuousRecognitionAsync(
-                () => console.log("🎤 Recording started"),
-                (err) => {
-                    console.error("Speech start error:", err);
-                    alert("Microphone error: " + err);
-                    startRecBtn.style.display = 'inline-block';
-                    stopRecBtn.style.display = 'none';
-                    recordingIndicator.style.display = 'none';
-                }
-            );
-
-        } catch (error) {
-            console.error("Microphone error:", error);
-            alert("Could not start microphone: " + error.message);
-        }
-    });
-
-    stopRecBtn.addEventListener('click', () => {
-        if (recognizer) {
-            recognizer.stopContinuousRecognitionAsync(() => {
-                startRecBtn.style.display = 'inline-block';
-                stopRecBtn.style.display = 'none';
-                recordingIndicator.style.display = 'none';
-                recognizer = null;
-            });
-        }
-    });
-} else {
-    if (!startRecBtn) console.warn("⚠️ Element #startRecBtn not found in HTML");
-    if (!stopRecBtn)  console.warn("⚠️ Element #stopRecBtn not found in HTML");
-    if (!recordingIndicator) console.warn("⚠️ Element #recordingIndicator not found in HTML");
+  } catch (err) {
+    console.warn('Speech init failed:', err.message);
+  }
 }
+
+if (typeof SpeechSDK !== 'undefined') {
+  initSpeech();
+}
+
+// --- FORMAT SOAP NOTE ---
+function formatSOAP(data) {
+  if (!data.subjective && !data.objective && !data.assessment && !data.plan) return '';
+
+  return `
+    <div class="soap-note">
+      <h3>✅ Clinical Documentation Processed</h3>
+      <div class="ai-disclaimer">
+        ⚠️ AI-ASSISTED DRAFT: This note was generated by NurseIQ AI and must be reviewed and verified by a qualified nurse before use.
+      </div>
+      <p><strong>Patient:</strong> ${data.patientName || 'Unknown'}</p>
+      <p><strong>S (Subjective):</strong> ${data.subjective || 'N/A'}</p>
+      <p><strong>O (Objective):</strong> ${data.objective || 'N/A'}</p>
+      <p><strong>A (Assessment):</strong> ${data.assessment || 'N/A'}</p>
+      <p><strong>P (Plan):</strong> ${data.plan || 'N/A'}</p>
+    </div>
+  `;
+}
+
+// --- FORMAT MEDICATION SAFETY ---
+function formatMedSafety(data) {
+  const medData = data.medicationSafety || data;
+  if (!medData || !medData.medications_detected || medData.medications_detected.length === 0) return '';
+
+  const detected = medData.medications_detected.join(', ').toUpperCase();
+  const severity = medData.severity_level || 'Low';
+  const severityColor = severity === 'High' ? '🔴' : '🟢';
+
+  let alertsHtml = '';
+  if (medData.alerts && medData.alerts.length > 0) {
+    alertsHtml = medData.alerts.map(alert => {
+      const sev = alert.severity === 'High' ? '🔴' : '✅';
+      let warningsHtml = '';
+      if (alert.warning && typeof alert.warning === 'object') {
+        warningsHtml = Object.entries(alert.warning).slice(0, 2).map(([key, val]) =>
+          `<p><strong>${key}:</strong> ${String(val).substring(0, 150)}...</p>`
+        ).join('');
+      } else if (alert.warning) {
+        warningsHtml = `<p>${String(alert.warning).substring(0, 200)}...</p>`;
+      }
+      return `
+        <div class="med-alert">
+          <strong>${sev} ${alert.medication.toUpperCase()}</strong> — Severity: ${alert.severity}
+          ${warningsHtml ? `<div class="warnings">Warnings<br>${warningsHtml}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  } else {
+    alertsHtml = '<p>✅ No drug interaction alerts found.</p>';
+  }
+
+  return `
+    <div class="medication-safety">
+      <h3>💊 Medication Safety Check</h3>
+      <p>Detected: ${detected}</p>
+      ${alertsHtml}
+      <p><strong>Overall Severity: ${severityColor} ${severity}</strong></p>
+    </div>
+  `;
+}
+
+// --- FORMAT PATIENT COMMUNICATION ---
+function formatPatientComms(data) {
+  const comms = data.patientCommunication;
+  if (!comms) return '';
+
+  return `
+    <div class="patient-communication">
+      <h3>📋 Patient Discharge Summary</h3>
+      ${comms.patientInstructions ? `
+        <div class="comm-section">
+          <strong>📝 Instructions:</strong>
+          <p>${comms.patientInstructions}</p>
+        </div>` : ''}
+      ${comms.medications ? `
+        <div class="comm-section">
+          <strong>💊 Medications:</strong>
+          <p>${comms.medications}</p>
+        </div>` : ''}
+      ${comms.warningSigns ? `
+        <div class="comm-section warning-signs">
+          <strong>⚠️ Warning Signs — Return to Hospital if:</strong>
+          <p>${comms.warningSigns}</p>
+        </div>` : ''}
+      ${comms.followUp ? `
+        <div class="comm-section">
+          <strong>📅 Follow-up:</strong>
+          <p>${comms.followUp}</p>
+        </div>` : ''}
+      ${comms.dietActivity ? `
+        <div class="comm-section">
+          <strong>🥗 Diet & Activity:</strong>
+          <p>${comms.dietActivity}</p>
+        </div>` : ''}
+    </div>
+  `;
+}
+
+// --- FORMAT COMPLIANCE AUDIT LOG ---
+function formatComplianceAudit(data) {
+  const audit = data.auditResult;
+  if (!audit) return '';
+
+  const statusColor = audit.complianceStatus === 'COMPLIANT' ? '🟢' : '🔴';
+  const phiBadge = audit.containsPHI
+    ? '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:0.85em;">⚠️ PHI Detected</span>'
+    : '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-size:0.85em;">✅ No PHI</span>';
+
+  let logsHtml = '';
+  if (audit.auditEntries && audit.auditEntries.length > 0) {
+    logsHtml = audit.auditEntries.map(entry => {
+      const time = entry.timestamp ? entry.timestamp.split('T')[1]?.split('.')[0] : '';
+      const action = entry.action || '';
+      const details = entry.details || '';
+      return `
+        <div class="audit-entry">
+          <span class="audit-time">${time}</span>
+          <span class="audit-event">${action}</span>
+          <span class="audit-detail"> — ${details}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  return `
+    <div class="compliance-audit">
+      <h3>🔒 Compliance & Audit Log</h3>
+      <div class="compliance-header">
+        <span>${statusColor} Status: <strong>${audit.complianceStatus || 'COMPLIANT'}</strong></span>
+        &nbsp;&nbsp;${phiBadge}
+        ${audit.agentsUsed ? `&nbsp;&nbsp;<span style="font-size:0.85em;color:#6b7280;">Agents: ${audit.agentsUsed.join(', ')}</span>` : ''}
+      </div>
+      <div class="audit-log">
+        ${logsHtml || '<p style="color:#9ca3af;font-size:0.85em;">No audit entries</p>'}
+      </div>
+    </div>
+  `;
+}
+
+// --- SEND NOTE & PROCESS ---
+async function sendNote() {
+  const noteText = userInput.value.trim();
+  if (!noteText) return;
+
+  addMessage(noteText, false);
+  userInput.value = '';
+
+  addMessage('<em>🔄 Processing with NurseIQ agents...</em>', true);
+
+  try {
+    const response = await fetch('/api/process-note', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patientNote: noteText })
+    });
+
+    const data = await response.json();
+
+    // Remove the loading message
+    const messages = chatMessages.querySelectorAll('.bot-message');
+    if (messages.length > 0) {
+      messages[messages.length - 1].remove();
+    }
+
+    if (data.error) {
+      addMessage(`❌ Error: ${data.error}`, true);
+      return;
+    }
+
+    let outputHtml = '';
+    outputHtml += formatSOAP(data);
+    outputHtml += formatMedSafety(data);
+    outputHtml += formatPatientComms(data);
+    outputHtml += formatComplianceAudit(data);
+
+    addMessage(outputHtml || '<p>⚠️ No output received from agents.</p>', true);
+
+  } catch (err) {
+    addMessage(`❌ Connection error: ${err.message}`, true);
+  }
+}
+
+sendBtn.addEventListener('click', sendNote);
+userInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendNote();
+  }
+});

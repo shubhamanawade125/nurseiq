@@ -119,3 +119,63 @@ header p {
     height: 300px;
   }
 }
+/* ===== COMPLIANCE AUDIT LOG ===== */
+.compliance-audit {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #6366f1;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.compliance-audit h3 {
+  color: #4338ca;
+  margin: 0 0 12px 0;
+  font-size: 1em;
+}
+
+.compliance-header {
+  margin-bottom: 12px;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.audit-log {
+  background: #1e293b;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.78em;
+}
+
+.audit-entry {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid #334155;
+  line-height: 1.4;
+}
+
+.audit-entry:last-child {
+  border-bottom: none;
+}
+
+.audit-time {
+  color: #64748b;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.audit-event {
+  color: #34d399;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.audit-detail {
+  color: #94a3b8;
+}

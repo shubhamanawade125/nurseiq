@@ -1,6 +1,7 @@
 require('dotenv').config();
 const MedicationSafetyAgent = require('./MedicationSafetyAgent');
 const PatientCommunicationAgent = require('./PatientCommunicationAgent');
+const ComplianceAuditAgent = require('./ComplianceAuditAgent');
 
 class OrchestratorAgent {
     constructor(onThinkingUpdate = () => {}) {
@@ -8,6 +9,7 @@ class OrchestratorAgent {
         this.logs = [];
         this.medicationAgent = new MedicationSafetyAgent();
         this.communicationAgent = new PatientCommunicationAgent();
+        this.complianceAgent = new ComplianceAuditAgent();
     }
 
     async processInput(handoverNote) {
@@ -19,10 +21,9 @@ class OrchestratorAgent {
 
         const lowerNote = handoverNote.toLowerCase();
 
-        // Check what agents to activate
-        const medicationFlagged = lowerNote.includes('medication') || 
-            lowerNote.includes('drug') || 
-            lowerNote.includes('prescribe') || 
+        const medicationFlagged = lowerNote.includes('medication') ||
+            lowerNote.includes('drug') ||
+            lowerNote.includes('prescribe') ||
             lowerNote.includes('aspirin') ||
             lowerNote.includes('tablet') ||
             lowerNote.includes('mg') ||
@@ -30,7 +31,7 @@ class OrchestratorAgent {
             lowerNote.includes('insulin') ||
             lowerNote.includes('warfarin');
 
-        const dischargeFlagged = lowerNote.includes('discharge') || 
+        const dischargeFlagged = lowerNote.includes('discharge') ||
             lowerNote.includes('going home') ||
             lowerNote.includes('released') ||
             lowerNote.includes('send home') ||
@@ -46,7 +47,7 @@ class OrchestratorAgent {
         // Call MedicationSafetyAgent if medications mentioned
         if (medicationFlagged) {
             this.log('Medications mentioned - activating MedicationSafetyAgent');
-            this.onThinkingUpdate('Flagging for MedicationSafetyAgent...');
+            this.onThinkingUpdate('Checking medication safety...');
             activatedAgents.push('MedicationSafetyAgent');
             const medSafety = await this.medicationAgent.checkSafety(handoverNote);
             outputs.MedicationSafetyAgent = medSafety;
@@ -63,6 +64,14 @@ class OrchestratorAgent {
             this.log('PatientCommunicationAgent completed');
         }
 
+        // Always run ComplianceAuditAgent
+        this.log('Running ComplianceAuditAgent');
+        this.onThinkingUpdate('Running compliance audit...');
+        activatedAgents.push('ComplianceAuditAgent');
+        const auditResult = this.complianceAgent.auditNoteProcessing(handoverNote, activatedAgents);
+        outputs.ComplianceAuditAgent = auditResult;
+        this.log('ComplianceAuditAgent completed');
+
         this.onThinkingUpdate('Processing complete');
 
         return {
@@ -70,7 +79,8 @@ class OrchestratorAgent {
             logs: this.logs,
             ...soapNote,
             medicationSafety: outputs.MedicationSafetyAgent || null,
-            patientCommunication: outputs.PatientCommunicationAgent || null
+            patientCommunication: outputs.PatientCommunicationAgent || null,
+            auditResult: auditResult
         };
     }
 
@@ -84,7 +94,6 @@ class OrchestratorAgent {
             }
 
             const url = `${endpoint}/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-05-01-preview`;
-
             this.log(`Calling Azure OpenAI: ${url}`);
 
             const response = await fetch(url, {
@@ -97,7 +106,7 @@ class OrchestratorAgent {
                     messages: [
                         {
                             role: 'system',
-                            content: `You are a clinical documentation specialist. Convert nursing handover notes into structured SOAP format. 
+                            content: `You are a clinical documentation specialist. Convert nursing handover notes into structured SOAP format.
 Always respond with valid JSON only, no markdown, no explanation.
 JSON format:
 {
